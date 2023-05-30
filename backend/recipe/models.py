@@ -53,7 +53,6 @@ class IngredientModel(models.Model):
     name = models.CharField(
         verbose_name="Название ингридиента",
         max_length=200,
-        unique=True,
         null=False,
         blank=False,
     )
@@ -70,6 +69,7 @@ class IngredientModel(models.Model):
     class Meta:
         ordering = ("id",)
         db_table = "Ingredient"
+        unique_together = ('name', 'measurement_unit',)
 
 
 class RecipeModel(models.Model):
@@ -124,7 +124,7 @@ class RecipeModel(models.Model):
         return self.name
     
     class Meta:
-        ordering = ("id",)
+        ordering = ("-id",)
         db_table = "Recipe"
 
 
