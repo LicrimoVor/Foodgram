@@ -286,4 +286,3 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         model = ShoppingCartModel
         fields = ('id', 'name', 'color', 'slug')
 
-
