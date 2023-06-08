@@ -1,5 +1,6 @@
-import re
+lol = {
+    "12" : "asad"
+}
 
-
-
-print(re.fullmatch(r"^[\w.@+-]+\Z", "licrimovor"))
+for i in lol.values():
+    print(i)

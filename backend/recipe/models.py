@@ -158,7 +158,8 @@ class IngredientRecipeModel(models.Model):
     ingredient = models.ForeignKey(
         IngredientModel,
         verbose_name="Ингредиент (id)",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_DEFAULT,
+        default="Какой то ингредиент",
         related_name='ingredient_recipe',
     )
     recipe = models.ForeignKey(
@@ -167,7 +168,7 @@ class IngredientRecipeModel(models.Model):
         on_delete=models.CASCADE,
         related_name='ingredient_recipe',
     )
-    amount = models.IntegerField(
+    amount = models.FloatField(
         verbose_name="Кол-во ингредиента",
         null=False,
         blank=False,
@@ -175,7 +176,7 @@ class IngredientRecipeModel(models.Model):
     )
 
     def __str__(self) -> str:
-        return f'{self.recipe} {self.ingredient}'
+        return f'{self.recipe} {self.ingredient} {self.amount}'
 
     class Meta:
         ordering = ("id",)

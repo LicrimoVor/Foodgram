@@ -4,7 +4,6 @@ from django.utils.translation import gettext_lazy as _
 
 from core.validators import validate_correct_username
 
-
 class UserModel(AbstractUser):
     """Модель пользователя."""
 
@@ -35,3 +34,9 @@ class UserModel(AbstractUser):
         blank=False,
     )
     groups = None
+
+    def __str__(self):
+        return self.username
+
+    class Meta:
+        ordering = ("id",)
