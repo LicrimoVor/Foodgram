@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 
 from profile_user.models import FavoriteModel, FollowModel, ShoppingCartModel
+from django.contrib.auth.models import Group
+
 
 
 class FavoriteInline(admin.TabularInline):
@@ -43,7 +45,7 @@ class UserAdmin(admin.ModelAdmin):
         FollowInline,
         SubscriptionInline,
     ]
-    
 
 
+admin.site.unregister(Group)
 admin.site.register(User, UserAdmin)

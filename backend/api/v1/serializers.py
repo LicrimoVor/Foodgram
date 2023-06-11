@@ -1,11 +1,7 @@
-# import base64
-# import datetime as dt
 import base64
-# import webcolors
-# from django.core.files.base import ContentFile
+
 from rest_framework import serializers
 from django.core.files.base import ContentFile
-from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
@@ -263,20 +259,48 @@ class RecipeSerializer(serializers.ModelSerializer):
         return data
 
 
-class FavoriteSerializer(serializers.ModelSerializer):
-    """Сериализатор избранных рецептов."""
+class RecipeTwoSerializer(serializers.ModelSerializer):
+    """Вспомогательный сериализатор."""
 
     class Meta:
-        model = FavoriteModel
-        fields = ('id', 'name', 'color', 'slug')
+        model = RecipeModel
+        fields = ('id', 'name', 'image', 'cooking_time',)
+        # read_only_fields = ('name', 'image', 'cooking_time',)
 
 
 class FollowSerializer(serializers.ModelSerializer):
     """Сериализатор подписок."""
+    follower = UserSerializer(read_only=True)
+    recipes = serializers.SerializerMethodField(read_only=True)
+    recipes_count = serializers.SerializerMethodField(read_only=True)
+
 
     class Meta:
         model = FollowModel
-        fields = ('id', 'name', 'color', 'slug')
+        fields = ('follower', 'recipes', 'recipes_count')
+    
+    def get_recipes_count(self, obj):
+        count_queryset = self.recipe_queryset.count()
+        return count_queryset
+
+    def get_recipes(self, obj):
+        author = obj.follower
+        self.recipe_queryset = RecipeModel.objects.filter(author=author)
+        serializer = RecipeTwoSerializer(self.recipe_queryset, many=True)
+        return serializer.data
+
+    def to_representation(self, value):
+        value_dict = dict(super().to_representation(value))
+        follower_dict = value_dict.pop("follower")
+        result_dict = {**value_dict, **follower_dict}
+        return result_dict
+
+    def create(self, validated_data):
+        follow_id = self.initial_data.get("follow_id")
+        author = get_object_or_404(User, id=follow_id)
+        user = self.initial_data.get("user")
+        follow_model = FollowModel.objects.get_or_create(follower=author, user=user)
+        return follow_model[0]
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
@@ -286,3 +310,28 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         model = ShoppingCartModel
         fields = ('id', 'name', 'color', 'slug')
 
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    """Сериализатор избранных рецептов."""
+    recipe = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = FavoriteModel
+        fields = ('recipe', )
+        # read_only_fields = ('name', 'image', 'cooking_time',)
+
+    def create(self, initial_data):
+        recipe_id = self.initial_data.get("favorite_id")
+        user = self.initial_data.get("user")
+        self.recipe = get_object_or_404(RecipeModel, id=recipe_id)
+        favorite_model = FavoriteModel.objects.get_or_create(recipe=self.recipe, user=user)
+        return favorite_model[0]
+
+    def get_recipe(self, obj):
+        serializer = RecipeTwoSerializer(self.recipe)
+        return serializer.data
+
+    def to_representation(self, value):
+        value_dict = dict(super().to_representation(value))
+        result_dict = {**value_dict, }
+        return result_dict

@@ -11,10 +11,11 @@
             "request": "launch",
             "program": "${workspaceFolder}\\backend\\manage.py",
             "args": [
-                "runserver"
+                "runserver",
+                "8000"
             ],
             "django": true,
-            "justMyCode": true
+            "justMyCode": true,
         },
         {
             "name": "Import data",
@@ -25,7 +26,7 @@
                 "import_db"
             ],
             "django": true,
-            "justMyCode": true
+            "justMyCode": true,
         }
     ]
 }

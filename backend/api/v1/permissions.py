@@ -1,7 +1,6 @@
 from rest_framework.permissions import (
     SAFE_METHODS,
     BasePermission,
-    IsAuthenticatedOrReadOnly,
 )
 from django.contrib.auth import get_user_model
 

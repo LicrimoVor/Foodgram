@@ -21,3 +21,12 @@ class GetPostDelViewSet(
     """Viewset для получения списка, удаления и создания моделей."""
 
     pass
+
+class PostDelViewSet(
+    mixins.DestroyModelMixin,
+    mixins.CreateModelMixin,
+    GenericViewSet,
+    ):
+    """Viewset для удаления и создания моделей."""
+
+    pass

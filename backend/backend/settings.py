@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     'user.apps.UserConfig',
     'core.apps.CoreConfig',
     'profile_user.apps.ProfileUserConfig',
-    "django_filters",
+    'django_filters',
 ]
 
 AUTH_USER_MODEL = 'user.UserModel'
@@ -124,11 +124,18 @@ REST_FRAMEWORK = {
 }
 
 DJOSER = {
-    'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
-    'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
-    'ACTIVATION_URL': '#/activate/{uid}/{token}',
-    'SEND_ACTIVATION_EMAIL': True,
-    'SEND_CONFIRMATION_EMAIL': True,
-    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
-    'SERIALIZERS': {},
+    # 'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
+    # 'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
+    # 'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    # 'SEND_ACTIVATION_EMAIL': True,
+    # 'SEND_CONFIRMATION_EMAIL': True,
+    # 'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
+    'LOGIN_FIELD': 'email',
+    'SERIALIZERS': {
+        'user': 'api.v1.serializers.UserSerializer',
+        'user': 'api.v1.serializers.UserSerializer',
+    },
+    'PERMISSIONS': {
+        'user_list': ['api.v1.permissions.ModifiPerm', ],
+    }
 }

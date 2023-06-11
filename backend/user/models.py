@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from core.validators import validate_correct_username
 
+
 class UserModel(AbstractUser):
     """Модель пользователя."""
 
@@ -13,7 +14,7 @@ class UserModel(AbstractUser):
         unique=True,
         null=False,
         blank=False,
-        validators=[validate_correct_username]
+        validators=[validate_correct_username, ],
     )
     first_name = models.CharField(
         _('first name'),
@@ -32,8 +33,12 @@ class UserModel(AbstractUser):
         max_length=254,
         null=False,
         blank=False,
+        unique=True,
     )
     groups = None
+    # костыль
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'last_name', 'first_name']
 
     def __str__(self):
         return self.username
