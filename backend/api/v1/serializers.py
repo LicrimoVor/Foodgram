@@ -18,11 +18,13 @@ from profile_user.models import (
     FollowModel,
     ShoppingCartModel,
 )
+from core.exception import BadRequest
 
 User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор пользователей."""
 
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
@@ -260,16 +262,16 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class RecipeTwoSerializer(serializers.ModelSerializer):
-    """Вспомогательный сериализатор."""
+    """Вспомогательный сериализатор. Отвечает только за визуализацию."""
 
     class Meta:
         model = RecipeModel
         fields = ('id', 'name', 'image', 'cooking_time',)
-        # read_only_fields = ('name', 'image', 'cooking_time',)
 
 
 class FollowSerializer(serializers.ModelSerializer):
     """Сериализатор подписок."""
+
     follower = UserSerializer(read_only=True)
     recipes = serializers.SerializerMethodField(read_only=True)
     recipes_count = serializers.SerializerMethodField(read_only=True)
@@ -299,32 +301,60 @@ class FollowSerializer(serializers.ModelSerializer):
         follow_id = self.initial_data.get("follow_id")
         author = get_object_or_404(User, id=follow_id)
         user = self.initial_data.get("user")
+        if user.id == follow_id:
+            raise BadRequest()
+    
         follow_model = FollowModel.objects.get_or_create(follower=author, user=user)
+        if follow_model[1] is False:
+            raise BadRequest()
+
         return follow_model[0]
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
     """Сериализатор списка продуктов."""
 
+    recipe = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = ShoppingCartModel
-        fields = ('id', 'name', 'color', 'slug')
+        fields = ('recipe', )
+
+    def create(self, initial_data):
+        recipe_id = self.initial_data.get("shopping_cart_id")
+        user = self.initial_data.get("user")
+        self.recipe = get_object_or_404(RecipeModel, id=recipe_id)
+        shoppingCart_model = ShoppingCartModel.objects.get_or_create(recipe=self.recipe, user=user)
+        if shoppingCart_model[1] is False:
+            raise BadRequest()
+        return shoppingCart_model[0]
+
+    def get_recipe(self, obj):
+        serializer = RecipeTwoSerializer(self.recipe)
+        return serializer.data
+
+    def to_representation(self, value):
+        value_dict = dict(super().to_representation(value))
+        result_dict = {**value_dict, }
+        return result_dict
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
     """Сериализатор избранных рецептов."""
+
     recipe = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = FavoriteModel
         fields = ('recipe', )
-        # read_only_fields = ('name', 'image', 'cooking_time',)
 
     def create(self, initial_data):
         recipe_id = self.initial_data.get("favorite_id")
         user = self.initial_data.get("user")
         self.recipe = get_object_or_404(RecipeModel, id=recipe_id)
         favorite_model = FavoriteModel.objects.get_or_create(recipe=self.recipe, user=user)
+        if favorite_model[1] is False:
+            raise BadRequest()
         return favorite_model[0]
 
     def get_recipe(self, obj):
