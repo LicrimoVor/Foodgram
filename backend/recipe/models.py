@@ -181,3 +181,4 @@ class IngredientRecipeModel(models.Model):
     class Meta:
         ordering = ("id",)
         db_table = "Recipe-Ingredient"
+        unique_together = ["ingredient", "recipe"]

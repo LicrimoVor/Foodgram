@@ -1,6 +1,7 @@
 import base64
 
 from rest_framework import serializers
+from rest_framework.fields import set_value
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
@@ -119,14 +120,18 @@ class Base64ImageField(serializers.ImageField):
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор рецептов."""
 
-    tags = TagSerializer(many=True, required=False,)
+    
     ingredients = IngredientField(
         queryset=IngredientRecipeModel.objects.all(),
-        many=True)
-    image = Base64ImageField(required=True, allow_null=False)
+        many=True,
+        required=True,
+        )
+    image = Base64ImageField(allow_null=False, required=True,)
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
-    author = UserSerializer()
+    cooking_time = serializers.IntegerField(required=True,)
+    tags = TagSerializer(many=True, required=False, allow_null=True)
+    author = UserSerializer(required=False)
 
     class Meta:
         model = RecipeModel
@@ -143,34 +148,36 @@ class RecipeSerializer(serializers.ModelSerializer):
                   )
     
     def create(self, validated_data):
+        self.is_valid(True)
         ingredients = validated_data.pop("ingredients")
-        if 'tags' not in self.initial_data:
-            recipe = RecipeModel.objects.create(**validated_data)
+        tag_recipe_model_list = []
+        if 'tags' not in validated_data:
+            recipe = RecipeModel(**validated_data)
         else:
             tags_list = validated_data.pop('tags')
-            recipe = RecipeModel.objects.create(**validated_data)
-            tag_recipe_model_list = []
+            recipe = RecipeModel(**validated_data)
             for tag in tags_list:
                 tag_model = get_object_or_404(TagModel, id=tag)
                 tag_recipe_model = TagRecipeModel(tag=tag_model, recipe=recipe)
                 tag_recipe_model_list.append(tag_recipe_model)
-            TagRecipeModel.objects.bulk_create(tag_recipe_model_list)
+            
         
         ingredient_recipe_model_list = []
         for ingredient in ingredients:
             ingr_id = ingredient.pop("id")
             ingredient_model = get_object_or_404(IngredientModel, id=ingr_id)
-            ingredient_recipe_model = IngredientRecipeModel.objects.create(
+            ingredient_recipe_model = IngredientRecipeModel(
                 recipe=recipe, ingredient=ingredient_model, **ingredient
             )
             ingredient_recipe_model_list.append(ingredient_recipe_model)
+        
+        recipe.save()
         IngredientRecipeModel.objects.bulk_create(ingredient_recipe_model_list)
+        TagRecipeModel.objects.bulk_create(tag_recipe_model_list)
         
         return recipe
 
     def update(self, instance, validated_data):
-        """Возможно местами 'дубовато'. Обновление модели."""
-
         queryset_tag = TagRecipeModel.objects.filter(recipe=instance)
         tag_list = []
         for tag_model in enumerate(queryset_tag):
@@ -246,19 +253,22 @@ class RecipeSerializer(serializers.ModelSerializer):
             return value
         if not isinstance(value, list):
             raise serializers.ValidationError("Ожидался список")
-        if not isinstance(value[0], int):
-            raise serializers.ValidationError("Ожидались значения id (int)")
+        for val in value:
+            if not isinstance(val, int):
+                raise serializers.ValidationError("Ожидались значения id (int)")
         return value
 
     def to_internal_value(self, data):
-        """Так как ожидается словарь в ключе tags, то обойдем валидацию))."""
-        user = self.context.get('request').user
+        """Обход валидации тегов."""
+        tag_list = []
         if data.get("tags"):
             tag_list = data.pop("tags")
-            data["author"] = user.id
-            super().to_internal_value(data)
+        ordered_dict = super().to_internal_value(data)
+        if tag_list:
             data["tags"] = tag_list
-        return data
+            self.validate_tags(tag_list)
+            set_value(ordered_dict, ['tags'], tag_list)
+        return ordered_dict
 
 
 class RecipeTwoSerializer(serializers.ModelSerializer):

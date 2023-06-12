@@ -1,5 +1,3 @@
-import csv
-from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
@@ -26,7 +24,7 @@ from core.func import get_object_or_400
 User = get_user_model()
 
 
-class TagViewSet(GetViewSet):
+class TagSet(GetViewSet):
     """ViewSet модели тегов."""
 
     queryset = TagModel.objects.all()
@@ -75,6 +73,12 @@ class RecipeSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({"user": self.request.user})
         return context
+    
+    def update(self, request, *args, **kwargs):
+        """Проверка данных."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.to_internal_value(request.data)
+        return super().update(request, *args, **kwargs)
 
 
 class GetFollowSet(GetViewSet):
