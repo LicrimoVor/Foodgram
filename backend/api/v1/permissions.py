@@ -1,8 +1,5 @@
-from rest_framework.permissions import (
-    SAFE_METHODS,
-    BasePermission,
-)
 from django.contrib.auth import get_user_model
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 User = get_user_model()
 
@@ -15,7 +12,7 @@ class ModifiPerm(BasePermission):
         return (
             isinstance(request.user, User)
             or request.method in SAFE_METHODS
-            )
+        )
 
 
 class OnlyAuthPerm(BasePermission):

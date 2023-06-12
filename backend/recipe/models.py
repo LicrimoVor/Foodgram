@@ -1,13 +1,10 @@
-from django.db import models
 from django.contrib.auth import get_user_model
+from django.db import models
+
+from core.validators import (validate_amount_more_zero, validate_hex,
+                             validate_min_time)
 
 User = get_user_model()
-
-from core.validators import (
-    validate_hex,
-    validate_min_time,
-    validate_amount_more_zero,
-)
 
 
 class TagModel(models.Model):
@@ -122,7 +119,7 @@ class RecipeModel(models.Model):
 
     def __str__(self) -> str:
         return self.name
-    
+
     class Meta:
         ordering = ("-id",)
         db_table = "Recipe"
@@ -146,7 +143,7 @@ class TagRecipeModel(models.Model):
 
     def __str__(self) -> str:
         return f'{self.recipe} {self.tag}'
-    
+
     class Meta:
         ordering = ("id",)
         db_table = "Recipe-Tag"

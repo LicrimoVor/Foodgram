@@ -1,25 +1,16 @@
 import base64
 
-from rest_framework import serializers
-from rest_framework.fields import set_value
-from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.core.files.base import ContentFile
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers
+from rest_framework.fields import set_value
 
-from recipe.models import (
-    TagModel,
-    RecipeModel,
-    IngredientModel,
-    IngredientRecipeModel,
-    TagRecipeModel,
-)
-from profile_user.models import (
-    FavoriteModel,
-    FollowModel,
-    ShoppingCartModel,
-)
 from core.exception import BadRequest
+from profile_user.models import FavoriteModel, FollowModel, ShoppingCartModel
+from recipe.models import (IngredientModel, IngredientRecipeModel, RecipeModel,
+                           TagModel, TagRecipeModel)
 
 User = get_user_model()
 
@@ -31,7 +22,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("email", "id", "username", "first_name", "last_name", "is_subscribed",)
+        fields = (
+            "email",
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "is_subscribed",
+        )
 
     def get_is_subscribed(self, obj):
         user = self.context.get('request').user
@@ -82,7 +80,7 @@ class IngredientField(serializers.PrimaryKeyRelatedField):
         """Десериализация данных. (из словаря)"""
         id = data.get('id')
         amount = data.get('amount')
-        
+
         if not id:
             raise serializers.ValidationError({
                 'id': 'Это поле обязательное.'
@@ -100,7 +98,7 @@ class IngredientField(serializers.PrimaryKeyRelatedField):
         return {
             'id': int(id),
             'amount': float(amount),
-            }
+        }
 
 
 class Base64ImageField(serializers.ImageField):
@@ -120,12 +118,11 @@ class Base64ImageField(serializers.ImageField):
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор рецептов."""
 
-    
     ingredients = IngredientField(
         queryset=IngredientRecipeModel.objects.all(),
         many=True,
         required=True,
-        )
+    )
     image = Base64ImageField(allow_null=False, required=True,)
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
@@ -146,7 +143,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'is_favorited',
                   'is_in_shopping_cart',
                   )
-    
+
     def create(self, validated_data):
         self.is_valid(True)
         ingredients = validated_data.pop("ingredients")
@@ -160,8 +157,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 tag_model = get_object_or_404(TagModel, id=tag)
                 tag_recipe_model = TagRecipeModel(tag=tag_model, recipe=recipe)
                 tag_recipe_model_list.append(tag_recipe_model)
-            
-        
+
         ingredient_recipe_model_list = []
         for ingredient in ingredients:
             ingr_id = ingredient.pop("id")
@@ -170,11 +166,11 @@ class RecipeSerializer(serializers.ModelSerializer):
                 recipe=recipe, ingredient=ingredient_model, **ingredient
             )
             ingredient_recipe_model_list.append(ingredient_recipe_model)
-        
+
         recipe.save()
         IngredientRecipeModel.objects.bulk_create(ingredient_recipe_model_list)
         TagRecipeModel.objects.bulk_create(tag_recipe_model_list)
-        
+
         return recipe
 
     def update(self, instance, validated_data):
@@ -183,7 +179,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         for tag_model in enumerate(queryset_tag):
             tag_id = tag_model[1].tag.id
             tag_list.append(tag_id)
-        
+
         tag_set_original = set(tag_list)
         if validated_data.get('tags') is None:
             tag_set_data: set = {}
@@ -202,7 +198,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             tag_recipe_model_list.append(tag_recipe_model)
         TagRecipeModel.objects.bulk_create(tag_recipe_model_list)
 
-        queryset_ingredient = IngredientRecipeModel.objects.filter(recipe=instance)
+        queryset_ingredient = IngredientRecipeModel.objects.filter(
+            recipe=instance)
         ingredient_list = []
         for ingredient_model in enumerate(queryset_ingredient):
             ingredient_id = ingredient_model[1].id
@@ -214,9 +211,10 @@ class RecipeSerializer(serializers.ModelSerializer):
         for ingredient in ingredients:
             ingr_id = ingredient.pop("id")
             ingredient_model = get_object_or_404(IngredientModel, id=ingr_id)
-            ingredient_recipe_model = IngredientRecipeModel.objects.get_or_create(
-                recipe=instance, ingredient=ingredient_model, **ingredient
-            )[0]
+            ingredient_recipe_model = (
+                IngredientRecipeModel.objects.get_or_create(
+                    recipe=instance, ingredient=ingredient_model, **ingredient
+                )[0])
             ingredient_recipe_id = ingredient_recipe_model.id
             ingredient_data_list.append(ingredient_recipe_id)
         ingredient_data_set = set(ingredient_data_list)
@@ -255,7 +253,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Ожидался список")
         for val in value:
             if not isinstance(val, int):
-                raise serializers.ValidationError("Ожидались значения id (int)")
+                raise serializers.ValidationError(
+                    "Ожидались значения id (int)")
         return value
 
     def to_internal_value(self, data):
@@ -286,11 +285,10 @@ class FollowSerializer(serializers.ModelSerializer):
     recipes = serializers.SerializerMethodField(read_only=True)
     recipes_count = serializers.SerializerMethodField(read_only=True)
 
-
     class Meta:
         model = FollowModel
         fields = ('follower', 'recipes', 'recipes_count')
-    
+
     def get_recipes_count(self, obj):
         count_queryset = self.recipe_queryset.count()
         return count_queryset
@@ -313,8 +311,9 @@ class FollowSerializer(serializers.ModelSerializer):
         user = self.initial_data.get("user")
         if user.id == follow_id:
             raise BadRequest()
-    
-        follow_model = FollowModel.objects.get_or_create(follower=author, user=user)
+
+        follow_model = FollowModel.objects.get_or_create(follower=author,
+                                                         user=user)
         if follow_model[1] is False:
             raise BadRequest()
 
@@ -334,7 +333,8 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         recipe_id = self.initial_data.get("shopping_cart_id")
         user = self.initial_data.get("user")
         self.recipe = get_object_or_404(RecipeModel, id=recipe_id)
-        shoppingCart_model = ShoppingCartModel.objects.get_or_create(recipe=self.recipe, user=user)
+        shoppingCart_model = ShoppingCartModel.objects.get_or_create(
+            recipe=self.recipe, user=user)
         if shoppingCart_model[1] is False:
             raise BadRequest()
         return shoppingCart_model[0]
@@ -362,7 +362,8 @@ class FavoriteSerializer(serializers.ModelSerializer):
         recipe_id = self.initial_data.get("favorite_id")
         user = self.initial_data.get("user")
         self.recipe = get_object_or_404(RecipeModel, id=recipe_id)
-        favorite_model = FavoriteModel.objects.get_or_create(recipe=self.recipe, user=user)
+        favorite_model = FavoriteModel.objects.get_or_create(
+            recipe=self.recipe, user=user)
         if favorite_model[1] is False:
             raise BadRequest()
         return favorite_model[0]

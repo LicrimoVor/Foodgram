@@ -1,13 +1,8 @@
 from django.contrib import admin
 
-from .models import (
-    RecipeModel,
-    TagModel,
-    IngredientModel,
-    IngredientRecipeModel,
-    TagRecipeModel,
-)
 from profile_user.models import FavoriteModel
+from recipe.models import (IngredientModel, IngredientRecipeModel, RecipeModel,
+                           TagModel, TagRecipeModel)
 
 
 class IngredientInline(admin.TabularInline):
@@ -25,7 +20,6 @@ class RecipeAdmin(admin.ModelAdmin):
     list_display = ("name", "author")
     list_filter = ("author", "name", "tags")
     readonly_fields = ("favorite_count", )
-
 
     def favorite_count(self, obj):
         return len(FavoriteModel.objects.filter(recipe=obj))

@@ -1,7 +1,6 @@
 import re
 
 from django.core.exceptions import ValidationError
-from rest_framework import serializers
 
 
 def validate_hex(hex_string: str) -> None:
@@ -13,6 +12,7 @@ def validate_hex(hex_string: str) -> None:
             params={"color": hex_string},
         )
 
+
 def validate_min_time(time: float) -> None:
     """Проверка времени на условие time > 1."""
     if time < 1:
@@ -20,6 +20,7 @@ def validate_min_time(time: float) -> None:
             message="Время приготовления не может быть меньше 1.",
             params={"cooking_time": time},
         )
+
 
 def validate_amount_more_zero(amount: float) -> None:
     """Проверка на значение > 0."""
@@ -30,12 +31,13 @@ def validate_amount_more_zero(amount: float) -> None:
             params={"amount": amount},
         )
 
+
 def validate_correct_username(username: str) -> None:
     """Проверка никнейма пользователя на корректность."""
     if re.fullmatch(r"^[\w.@+-]+\Z", username) is None:
         raise ValidationError(
             message="Никнейм пользователя введен неверно.\
-                     Никнейм может содержать латинские буквы верхнего и нижнего регистра\
-                     цифры, а так же символы . @ + -",
+                     Никнейм может содержать латинские буквы верхнего\
+                     и нижнего регистра цифры, а так же символы . @ + -",
             params={"username": username},
         )

@@ -6,20 +6,16 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.response import Response
 
-from .viewset import GetViewSet
-from recipe.models import TagModel, IngredientModel, RecipeModel, IngredientRecipeModel
-from profile_user.models import FollowModel, ShoppingCartModel, FavoriteModel
-from .permissions import ModifiPerm, OnlyAuthPerm
-from .serializers import (
-    TagSerializer,
-    IngredientSerializer,
-    RecipeSerializer,
-    ShoppingCartSerializer,
-    FavoriteSerializer,
-    FollowSerializer,
-)
 from core.func import get_object_or_400
+from profile_user.models import FavoriteModel, FollowModel, ShoppingCartModel
+from recipe.models import (IngredientModel, IngredientRecipeModel, RecipeModel,
+                           TagModel)
 
+from .permissions import ModifiPerm, OnlyAuthPerm
+from .serializers import (FavoriteSerializer, FollowSerializer,
+                          IngredientSerializer, RecipeSerializer,
+                          ShoppingCartSerializer, TagSerializer)
+from .viewset import GetViewSet
 
 User = get_user_model()
 
@@ -65,7 +61,7 @@ class RecipeSet(viewsets.ModelViewSet):
             queryset = queryset.filter(tags=tags)
 
         return queryset
-    
+
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
@@ -73,7 +69,7 @@ class RecipeSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({"user": self.request.user})
         return context
-    
+
     def update(self, request, *args, **kwargs):
         """Проверка данных."""
         serializer = self.get_serializer(data=request.data)
@@ -107,18 +103,21 @@ class PostDelFollowView(generics.DestroyAPIView,
             'user': request.user,
             'follow_id': kwargs.get("follow_id"),
         }
-        
+
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(serializer.data,
+                        status=status.HTTP_201_CREATED,
+                        headers=headers)
 
     def destroy(self, request, *args, **kwargs):
         follow_id = kwargs.get("follow_id")
         author = get_object_or_404(User, id=follow_id)
         user = request.user
-        follow_model = get_object_or_400(FollowModel, follower=author, user=user)
+        follow_model = get_object_or_400(FollowModel,
+                                         follower=author, user=user)
         follow_model.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -148,11 +147,13 @@ class GetShoppingCartSet(GetViewSet):
 
         for shop_model in enumerate(queryset_shop):
             recipe_model = shop_model[1].recipe
-            queryset_ingredient = IngredientRecipeModel.objects.filter(recipe=recipe_model)
-            
+            queryset_ingredient = IngredientRecipeModel.objects.filter(
+                recipe=recipe_model)
+
             for ingredient_model in enumerate(queryset_ingredient):
                 name = ingredient_model[1].ingredient.name
-                measurement_unit = ingredient_model[1].ingredient.measurement_unit
+                measurement_unit = (
+                    ingredient_model[1].ingredient.measurement_unit)
                 amount = ingredient_model[1].amount
                 key = f"{name}, {measurement_unit}"
                 if ingredient_data.get(key) is None:
@@ -180,13 +181,15 @@ class PostDelShoppingCartView(generics.DestroyAPIView,
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(serializer.data,
+                        status=status.HTTP_201_CREATED, headers=headers)
 
     def destroy(self, request, *args, **kwargs):
         recipe_id = kwargs.get("shopping_cart_id")
         recipe = get_object_or_404(RecipeModel, id=recipe_id)
         user = request.user
-        favorite_model = get_object_or_400(ShoppingCartModel, recipe=recipe, user=user)
+        favorite_model = get_object_or_400(ShoppingCartModel,
+                                           recipe=recipe, user=user)
         favorite_model.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -208,12 +211,14 @@ class FavoriteView(generics.DestroyAPIView,
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(serializer.data,
+                        status=status.HTTP_201_CREATED, headers=headers)
 
     def destroy(self, request, *args, **kwargs):
         recipe_id = kwargs.get("favorite_id")
         recipe = get_object_or_404(RecipeModel, id=recipe_id)
         user = request.user
-        favorite_model = get_object_or_400(FavoriteModel, recipe=recipe, user=user)
+        favorite_model = get_object_or_400(FavoriteModel,
+                                           recipe=recipe, user=user)
         favorite_model.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
