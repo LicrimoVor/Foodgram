@@ -16,6 +16,7 @@ from .serializers import (FavoriteSerializer, FollowSerializer,
                           IngredientSerializer, RecipeSerializer,
                           ShoppingCartSerializer, TagSerializer)
 from .viewset import GetViewSet
+from .filterset import IngredientFilter
 
 User = get_user_model()
 
@@ -36,8 +37,7 @@ class IngredientSet(GetViewSet):
     queryset = IngredientModel.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (permissions.AllowAny, )
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ("name",)
+    filter_backends = (IngredientFilter,)
 
 
 class RecipeSet(viewsets.ModelViewSet):
@@ -136,7 +136,7 @@ class GetShoppingCartSet(GetViewSet):
         ingredient_data = self.get_ingredient_data(queryset_shop)
         content = ""
         for key, value in ingredient_data.items():
-            string_row = f"{key}: {value} \n"
+            string_row = f"{key} — {value} \n"
             content += string_row
         response = HttpResponse(content, content_type="text/plain")
         response['Content-Disposition'] = 'attachment; filename=file.txt'
@@ -155,7 +155,7 @@ class GetShoppingCartSet(GetViewSet):
                 measurement_unit = (
                     ingredient_model[1].ingredient.measurement_unit)
                 amount = ingredient_model[1].amount
-                key = f"{name}, {measurement_unit}"
+                key = f"{name} ({measurement_unit})"
                 if ingredient_data.get(key) is None:
                     ingredient_data[key] = amount
                 else:
