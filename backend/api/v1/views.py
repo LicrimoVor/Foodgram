@@ -17,6 +17,7 @@ from .serializers import (FavoriteSerializer, FollowSerializer,
                           ShoppingCartSerializer, TagSerializer)
 from .viewset import GetViewSet
 from .filterset import IngredientFilter
+from .pagination import CustomPagination
 
 User = get_user_model()
 
@@ -28,7 +29,8 @@ class TagSet(GetViewSet):
     serializer_class = TagSerializer
     permission_classes = (permissions.AllowAny, )
     filter_backends = (filters.SearchFilter,)
-    search_fields = ("name",)
+    search_fields = ("name", "slug")
+    pagination_class = CustomPagination
 
 
 class IngredientSet(GetViewSet):
@@ -38,6 +40,7 @@ class IngredientSet(GetViewSet):
     serializer_class = IngredientSerializer
     permission_classes = (permissions.AllowAny, )
     filter_backends = (IngredientFilter,)
+    pagination_class = CustomPagination
 
 
 class RecipeSet(viewsets.ModelViewSet):

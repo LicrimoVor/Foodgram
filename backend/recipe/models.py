@@ -133,6 +133,7 @@ class TagRecipeModel(models.Model):
         verbose_name="Тег (id)",
         on_delete=models.CASCADE,
         related_name='tag_recipe',
+        to_field='slug',
     )
     recipe = models.ForeignKey(
         RecipeModel,
