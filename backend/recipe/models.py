@@ -156,7 +156,7 @@ class IngredientRecipeModel(models.Model):
         IngredientModel,
         verbose_name="Ингредиент (id)",
         on_delete=models.SET_DEFAULT,
-        default="Какой то ингредиент",
+        default=1,
         related_name='ingredient_recipe',
     )
     recipe = models.ForeignKey(
