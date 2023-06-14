@@ -41,7 +41,7 @@ class IngredientSet(GetViewSet):
 
 
 class RecipeSet(viewsets.ModelViewSet):
-    """ViewSet модели избранных рецептов пользователей."""
+    """ViewSet модели рецептов пользователей."""
     queryset = RecipeModel.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (ModifiPerm, )
@@ -65,7 +65,7 @@ class RecipeSet(viewsets.ModelViewSet):
 
 
 class GetFollowSet(GetViewSet):
-    """ViewSet модели подписок пользователей."""
+    """ViewSet модели подписок пользователей, только Get-запросы."""
 
     queryset = FollowModel.objects.all()
     serializer_class = FollowSerializer
@@ -80,7 +80,7 @@ class GetFollowSet(GetViewSet):
 class PostDelFollowView(generics.DestroyAPIView,
                         generics.CreateAPIView,
                         generics.GenericAPIView,):
-    """ViewSet модели подписок пользователя."""
+    """ViewSet модели подписок пользователя, только Post и Del-запросы."""
     queryset = FollowModel.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (OnlyAuthPerm, )
@@ -110,7 +110,7 @@ class PostDelFollowView(generics.DestroyAPIView,
 
 
 class GetShoppingCartSet(GetViewSet):
-    """ViewSet модели список купок пользователя."""
+    """ViewSet модели покупок пользователя, только Get-запросы."""
     queryset = ShoppingCartModel.objects.all()
     permission_classes = (OnlyAuthPerm, )
 
@@ -154,7 +154,7 @@ class GetShoppingCartSet(GetViewSet):
 class PostDelShoppingCartView(generics.DestroyAPIView,
                               generics.CreateAPIView,
                               generics.GenericAPIView,):
-    """ViewSet модели список купок пользователя."""
+    """ViewSet модели покупок пользователя, только Post и Del-запросов."""
     queryset = ShoppingCartModel.objects.all()
     serializer_class = ShoppingCartSerializer
     permission_classes = (OnlyAuthPerm, )
@@ -184,7 +184,10 @@ class PostDelShoppingCartView(generics.DestroyAPIView,
 class FavoriteView(generics.DestroyAPIView,
                    generics.CreateAPIView,
                    generics.GenericAPIView,):
-    """ViewSet модели избранных рецептов пользователя."""
+    """
+    ViewSet модели избранных рецептов пользователя,
+    только Post и Del-запросы.
+    """
     queryset = FavoriteModel.objects.all()
     serializer_class = FavoriteSerializer
     permission_classes = (OnlyAuthPerm, )

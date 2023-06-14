@@ -4,6 +4,7 @@ from rest_framework.filters import BaseFilterBackend
 
 
 class IngredientFilter(BaseFilterBackend):
+    """Фильтрация ингредиента по имени."""
 
     def filter_queryset(self, request, queryset, view):
         if request.query_params.get('name'):
@@ -16,24 +17,17 @@ class IngredientFilter(BaseFilterBackend):
 
 
 class TagsRecipeFilter(BaseFilterBackend):
+    """Фильтрация рецептов по тегу."""
 
     def filter_queryset(self, request, queryset, view):
         if request.query_params.get('tags'):
             tags_list = request.query_params.getlist('tags')
-
-            # queryset = queryset.filter(
-            #     reduce(lambda left, right: left | right,
-            #            [Q(tags__slug=tag) for tag in tags_list]))
-
-            # query = Q()
-            # for tag in tags_list:
-            #     query.add(Q(tags__slug=tag), Q.OR)
-
             queryset = queryset.filter(tags__slug__in=tags_list).distinct()
         return queryset
 
 
 class FavoriteRecipeFilter(BaseFilterBackend):
+    """Фильтрация рецептов по избранному."""
 
     def filter_queryset(self, request, queryset, view):
         if request.query_params.get('is_favorited'):

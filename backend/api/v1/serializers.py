@@ -31,6 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
     def get_is_subscribed(self, obj):
+        """Получение поля подписки."""
         user = self.context.get('request').user
         if isinstance(user, AnonymousUser):
             return False
@@ -101,6 +102,7 @@ class IngredientField(serializers.PrimaryKeyRelatedField):
 
 
 class Base64ImageField(serializers.ImageField):
+    """Поле для картинок."""
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')
@@ -220,12 +222,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         IngredientRecipeModel.objects.filter(id__in=ingredient_delete).delete()
         instance.name = validated_data.get('name')
         instance.text = validated_data.get('text')
-        instance.image = validated_data.get('image')
+        if validated_data.get('image'):
+            instance.image = validated_data.get('image')
         instance.cooking_time = validated_data.get('cooking_time')
         instance.save()
         return instance
 
     def get_is_favorited(self, obj):
+        """Получение поля избранного."""
         user = self.context.get('request').user
         if isinstance(user, AnonymousUser):
             return False
@@ -235,6 +239,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return False
 
     def get_is_in_shopping_cart(self, obj):
+        """Получение поля покупки."""
         user = self.context.get('request').user
         if isinstance(user, AnonymousUser):
             return False
@@ -288,10 +293,12 @@ class FollowSerializer(serializers.ModelSerializer):
         fields = ('follower', 'recipes', 'recipes_count')
 
     def get_recipes_count(self, obj):
+        """Получения поля кол-ва рецептов."""
         count_queryset = self.recipe_queryset.count()
         return count_queryset
 
     def get_recipes(self, obj):
+        """Получения поля рецептов."""
         author = obj.follower
         self.recipe_queryset = RecipeModel.objects.filter(author=author)
         serializer = RecipeTwoSerializer(self.recipe_queryset, many=True)
@@ -338,6 +345,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         return shoppingCart_model[0]
 
     def get_recipe(self, obj):
+        """Получения поля рецептов."""
         serializer = RecipeTwoSerializer(self.recipe)
         return serializer.data
 
@@ -367,6 +375,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
         return favorite_model[0]
 
     def get_recipe(self, obj):
+        """Получения поля рецептов."""
         recipe = obj.recipe
         serializer = RecipeSerializer(recipe, context=self.context)
         return serializer.data

@@ -7,6 +7,6 @@ class GetViewSet(
     mixins.ListModelMixin,
     GenericViewSet,
 ):
-    """Viewset для получения списка моделей."""
+    """Viewset для Get-запросов."""
 
     pass
