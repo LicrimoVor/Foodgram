@@ -1,16 +1,15 @@
 import base64
 
+from core.exception import BadRequest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
-from rest_framework.fields import set_value
-
-from core.exception import BadRequest
 from profile_user.models import FavoriteModel, FollowModel, ShoppingCartModel
 from recipe.models import (IngredientModel, IngredientRecipeModel, RecipeModel,
                            TagModel, TagRecipeModel)
+from rest_framework import serializers
+from rest_framework.fields import set_value
 
 User = get_user_model()
 
@@ -111,9 +110,6 @@ class Base64ImageField(serializers.ImageField):
 
         return super().to_internal_value(data)
 
-    def get_queryset(self):
-        ...
-
 
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор рецептов."""
@@ -123,7 +119,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         many=True,
         required=True,
     )
-    image = Base64ImageField(allow_null=False, required=True,)
+    image = Base64ImageField(allow_null=False, required=False,)
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
     cooking_time = serializers.IntegerField(required=True,)
@@ -189,12 +185,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         tag_delete = tag_set_original - tag_set_data
         for tag_id in tag_delete:
             tag_model = get_object_or_404(TagModel, id=tag_id)
+            tag_recipe_model = TagRecipeModel(tag=tag_model, recipe=instance)
             tag_model.delete()
 
         tag_create = tag_set_data - tag_set_original
         tag_recipe_model_list = []
         for tag_id in tag_create:
-            tag_recipe_model = TagRecipeModel(tag=tag_id, recipe=instance)
+            tag_model = get_object_or_404(TagModel, id=tag_id)
+            tag_recipe_model = TagRecipeModel(tag=tag_model, recipe=instance)
             tag_recipe_model_list.append(tag_recipe_model)
         TagRecipeModel.objects.bulk_create(tag_recipe_model_list)
 
@@ -361,15 +359,16 @@ class FavoriteSerializer(serializers.ModelSerializer):
     def create(self, initial_data):
         recipe_id = self.initial_data.get("favorite_id")
         user = self.initial_data.get("user")
-        self.recipe = get_object_or_404(RecipeModel, id=recipe_id)
+        recipe = get_object_or_404(RecipeModel, id=recipe_id)
         favorite_model = FavoriteModel.objects.get_or_create(
-            recipe=self.recipe, user=user)
+            recipe=recipe, user=user)
         if favorite_model[1] is False:
             raise BadRequest()
         return favorite_model[0]
 
     def get_recipe(self, obj):
-        serializer = RecipeTwoSerializer(self.recipe)
+        recipe = obj.recipe
+        serializer = RecipeSerializer(recipe, context=self.context)
         return serializer.data
 
     def to_representation(self, value):

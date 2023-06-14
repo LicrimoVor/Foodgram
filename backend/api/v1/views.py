@@ -1,23 +1,20 @@
-
+from core.func import get_object_or_400
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, generics, permissions, status, viewsets
-from rest_framework.response import Response
-
-from core.func import get_object_or_400
 from profile_user.models import FavoriteModel, FollowModel, ShoppingCartModel
 from recipe.models import (IngredientModel, IngredientRecipeModel, RecipeModel,
                            TagModel)
+from rest_framework import filters, generics, permissions, status, viewsets
+from rest_framework.response import Response
 
+from .filterset import FavoriteRecipeFilter, IngredientFilter, TagsRecipeFilter
+from .pagination import CustomPagination
 from .permissions import ModifiPerm, OnlyAuthPerm
 from .serializers import (FavoriteSerializer, FollowSerializer,
                           IngredientSerializer, RecipeSerializer,
                           ShoppingCartSerializer, TagSerializer)
 from .viewset import GetViewSet
-from .filterset import IngredientFilter
-from .pagination import CustomPagination
 
 User = get_user_model()
 
@@ -48,22 +45,10 @@ class RecipeSet(viewsets.ModelViewSet):
     queryset = RecipeModel.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (ModifiPerm, )
-    filter_backends = (filters.SearchFilter, DjangoFilterBackend)
+    filter_backends = (filters.SearchFilter,
+                       TagsRecipeFilter,
+                       FavoriteRecipeFilter)
     search_fields = ("text",)
-    filterset_fields = (
-        "tags",
-        "name",
-        "author",
-    )
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        tags = self.request.query_params.get("tags", None)
-
-        if tags is not None:
-            queryset = queryset.filter(tags=tags)
-
-        return queryset
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -74,7 +59,6 @@ class RecipeSet(viewsets.ModelViewSet):
         return context
 
     def update(self, request, *args, **kwargs):
-        """Проверка данных."""
         serializer = self.get_serializer(data=request.data)
         serializer.to_internal_value(request.data)
         return super().update(request, *args, **kwargs)

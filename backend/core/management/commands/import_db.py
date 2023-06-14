@@ -48,7 +48,8 @@ class Command(BaseCommand):
         path_db = Path(main_dir, *list_dir)
         list_model = []
         if not IngredientModel.objects.filter(id=1):
-            inst_model = model(name="Какой-то ингредиент", measurement_unit="Что-то")
+            inst_model = model(name="Какой-то ингредиент",
+                               measurement_unit="Что-то")
             list_model.append(inst_model)
         _write_bd_model()
         self.stdout.write("Ингредиенты интегрированны!")
