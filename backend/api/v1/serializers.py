@@ -188,7 +188,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         for tag_id in tag_delete:
             tag_model = get_object_or_404(TagModel, id=tag_id)
             tag_recipe_model = TagRecipeModel(tag=tag_model, recipe=instance)
-            tag_model.delete()
+            tag_recipe_model.delete()
 
         tag_create = tag_set_data - tag_set_original
         tag_recipe_model_list = []
