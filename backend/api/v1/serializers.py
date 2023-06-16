@@ -5,11 +5,12 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
+from rest_framework import serializers
+from rest_framework.fields import set_value
+
 from profile_user.models import FavoriteModel, FollowModel, ShoppingCartModel
 from recipe.models import (IngredientModel, IngredientRecipeModel, RecipeModel,
                            TagModel, TagRecipeModel)
-from rest_framework import serializers
-from rest_framework.fields import set_value
 
 User = get_user_model()
 

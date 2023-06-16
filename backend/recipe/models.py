@@ -1,8 +1,7 @@
+from core.validators import validate_hex
 from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator
 from django.db import models
-
-from core.validators import (validate_amount_more_zero, validate_hex,
-                             validate_min_time)
 
 User = get_user_model()
 
@@ -15,16 +14,12 @@ class TagModel(models.Model):
         help_text="Название тега",
         max_length=200,
         unique=True,
-        null=False,
-        blank=False,
     )
     color = models.CharField(
         verbose_name="Цвет",
         help_text="Цвет в HEX-формате",
         max_length=7,
         unique=True,
-        null=False,
-        blank=False,
         validators=[validate_hex],
     )
     slug = models.SlugField(
@@ -32,8 +27,6 @@ class TagModel(models.Model):
         help_text="Slug тега",
         max_length=200,
         unique=True,
-        null=False,
-        blank=False,
     )
 
     class Meta:
@@ -50,14 +43,10 @@ class IngredientModel(models.Model):
     name = models.CharField(
         verbose_name="Название ингридиента",
         max_length=200,
-        null=False,
-        blank=False,
     )
     measurement_unit = models.CharField(
         verbose_name="Ед. измерения",
         max_length=200,
-        null=False,
-        blank=False,
     )
 
     def __str__(self) -> str:
@@ -76,35 +65,27 @@ class RecipeModel(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name="Автор рецепта",
-        null=False,
-        blank=False,
         related_name='recipes',
     )
     name = models.CharField(
         verbose_name="Название",
         help_text="Название рецепта",
         max_length=200,
-        null=False,
-        blank=False,
     )
     text = models.TextField(
         verbose_name="Описание",
         help_text="Описание рецепта",
-        null=False,
-        blank=False,
     )
     image = models.ImageField(
         verbose_name="Фото блюда",
         upload_to="recipe/image/",
-        null=False,
-        blank=False,
     )
     cooking_time = models.IntegerField(
         verbose_name="Время (мин.)",
         help_text="Время приготовления в минутах",
-        null=False,
-        blank=False,
-        validators=[validate_min_time]
+        validators=[
+            MinValueValidator(
+                1, "Время приготовления не может быть меньше 1.")]
     )
     tags = models.ManyToManyField(
         TagModel,
@@ -168,9 +149,9 @@ class IngredientRecipeModel(models.Model):
     )
     amount = models.FloatField(
         verbose_name="Кол-во ингредиента",
-        null=False,
-        blank=False,
-        validators=[validate_amount_more_zero]
+        validators=[MinValueValidator(
+            1, "Количество ингридиента не может быть\
+                меньше или равен 0")]
     )
 
     def __str__(self) -> str:

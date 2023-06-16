@@ -1,5 +1,4 @@
 from django.contrib import admin
-
 from profile_user.models import FavoriteModel
 from recipe.models import (IngredientModel, IngredientRecipeModel, RecipeModel,
                            TagModel, TagRecipeModel)

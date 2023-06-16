@@ -2,15 +2,16 @@ from core.func import get_object_or_400
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from rest_framework import filters, generics, permissions, status, viewsets
+from rest_framework.response import Response
+from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
+                                        IsAuthenticated)
+
 from profile_user.models import FavoriteModel, FollowModel, ShoppingCartModel
 from recipe.models import (IngredientModel, IngredientRecipeModel, RecipeModel,
                            TagModel)
-from rest_framework import filters, generics, permissions, status, viewsets
-from rest_framework.response import Response
-
 from .filterset import FavoriteRecipeFilter, IngredientFilter, TagsRecipeFilter
 from .pagination import CustomPagination
-from .permissions import ModifiPerm, OnlyAuthPerm
 from .serializers import (FavoriteSerializer, FollowSerializer,
                           IngredientSerializer, RecipeSerializer,
                           ShoppingCartSerializer, TagSerializer)
@@ -44,7 +45,7 @@ class RecipeSet(viewsets.ModelViewSet):
     """ViewSet модели рецептов пользователей."""
     queryset = RecipeModel.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (ModifiPerm, )
+    permission_classes = (IsAuthenticatedOrReadOnly, )
     filter_backends = (filters.SearchFilter,
                        TagsRecipeFilter,
                        FavoriteRecipeFilter)
@@ -69,7 +70,7 @@ class GetFollowSet(GetViewSet):
 
     queryset = FollowModel.objects.all()
     serializer_class = FollowSerializer
-    permission_classes = (OnlyAuthPerm, )
+    permission_classes = (IsAuthenticated, )
 
     def get_queryset(self):
         user = self.request.user
@@ -83,7 +84,7 @@ class PostDelFollowView(generics.DestroyAPIView,
     """ViewSet модели подписок пользователя, только Post и Del-запросы."""
     queryset = FollowModel.objects.all()
     serializer_class = FollowSerializer
-    permission_classes = (OnlyAuthPerm, )
+    permission_classes = (IsAuthenticated, )
 
     def create(self, request, *args, **kwargs):
         data = {
@@ -112,7 +113,7 @@ class PostDelFollowView(generics.DestroyAPIView,
 class GetShoppingCartSet(GetViewSet):
     """ViewSet модели покупок пользователя, только Get-запросы."""
     queryset = ShoppingCartModel.objects.all()
-    permission_classes = (OnlyAuthPerm, )
+    permission_classes = (IsAuthenticated, )
 
     def get_queryset(self):
         user = self.request.user
@@ -157,7 +158,7 @@ class PostDelShoppingCartView(generics.DestroyAPIView,
     """ViewSet модели покупок пользователя, только Post и Del-запросов."""
     queryset = ShoppingCartModel.objects.all()
     serializer_class = ShoppingCartSerializer
-    permission_classes = (OnlyAuthPerm, )
+    permission_classes = (IsAuthenticated, )
 
     def create(self, request, *args, **kwargs):
         data = {
@@ -190,7 +191,7 @@ class FavoriteView(generics.DestroyAPIView,
     """
     queryset = FavoriteModel.objects.all()
     serializer_class = FavoriteSerializer
-    permission_classes = (OnlyAuthPerm, )
+    permission_classes = (IsAuthenticated, )
 
     def create(self, request, *args, **kwargs):
         data = {

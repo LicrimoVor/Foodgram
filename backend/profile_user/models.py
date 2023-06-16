@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-
 from recipe.models import RecipeModel
 
 User = get_user_model()
@@ -55,6 +54,7 @@ class FavoriteModel(models.Model):
     class Meta:
         ordering = ("id",)
         db_table = "Favorite"
+        unique_together = ('recipe', 'user')
 
 
 class ShoppingCartModel(models.Model):
@@ -76,3 +76,4 @@ class ShoppingCartModel(models.Model):
     class Meta:
         ordering = ("id",)
         db_table = "ShoppingCart"
+        unique_together = ('recipe', 'user')

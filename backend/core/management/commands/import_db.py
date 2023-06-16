@@ -2,7 +2,6 @@ import csv
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
-
 from recipe.models import IngredientModel
 
 main_dir = Path(__file__).parent.parent.parent.parent.parent
