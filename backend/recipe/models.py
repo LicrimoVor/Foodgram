@@ -105,6 +105,9 @@ class RecipeModel(models.Model):
         ordering = ("-id",)
         db_table = "Recipe"
 
+    def get_amount(self, *args, **kwargs):
+        return None
+
 
 class TagRecipeModel(models.Model):
     """Модель связи тегов и рецептов."""
