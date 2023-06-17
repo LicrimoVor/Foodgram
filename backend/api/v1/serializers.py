@@ -130,7 +130,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags_list = validated_data.pop('tags')
         for key, value in validated_data.items():
             getattr(instance, key, value)
-
+        IngredientRecipeModel.objects.filter(recipe=instance).delete()
         self.save_tags_ingredinets(ingredients, tags_list, instance)
         return instance
 
@@ -204,10 +204,9 @@ class RecipeSerializer(serializers.ModelSerializer):
             ingredient_recipe_model_list.append(ingredient_recipe_model)
 
         recipe.save()
-        recipe.tags.set(TagModel.objects.filter(id__in=tags_list))
-        # recipe.tags_set.set(tags_list)
+        recipe.tags.set(list(TagModel.objects.filter(id__in=tags_list)))
         recipe.ingredient_recipe.set(
-            ingredient_recipe_model_list, clear=True, bulk=False
+            ingredient_recipe_model_list, bulk=False
         )
 
 
