@@ -75,16 +75,9 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
         model = IngredientRecipeModel
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
-    # def to_representation(self, value):
-    #     """Сериализация данных. (в словарь)"""
-    #     data = super().to_representation(value)
-    #     ingredient = data.pop('ingredient')
-    #     for key, value in ingredient.items():
-    #         data[key] = value
-    #     return data
-
-    # def validate_ingredients(self, value):
-    #     return value
+    def validate_id(self, value):
+        get_object_or_404(IngredientModel, id=value)
+        return value
 
 
 class Base64ImageField(serializers.ImageField):
@@ -126,23 +119,20 @@ class RecipeSerializer(serializers.ModelSerializer):
                   )
 
     def create(self, validated_data):
-        recipe = RecipeModel(
-            name=validated_data.get('name'),
-            text=validated_data.get('text'),
-            image=validated_data.get('image'),
-            cooking_time=validated_data.get('cooking_time'),
-            author=validated_data.get('author'),
-        )
-        return self.save_tags_ingredients(validated_data, recipe)
+        ingredients = validated_data.pop("ingredient_recipe")
+        tags_list = validated_data.pop('tags')
+        recipe = RecipeModel(**validated_data)
+        self.save_tags_ingredinets(ingredients, tags_list, recipe)
+        return recipe
 
     def update(self, instance, validated_data):
-        TagRecipeModel.objects.filter(recipe=instance).delete()
-        IngredientRecipeModel.objects.filter(recipe=instance).delete()
-        instance.name = validated_data.get('name')
-        instance.text = validated_data.get('text')
-        instance.image = validated_data.get('image')
-        instance.cooking_time = validated_data.get('cooking_time')
-        return self.save_tags_ingredients(validated_data, instance)
+        ingredients = validated_data.pop("ingredient_recipe")
+        tags_list = validated_data.pop('tags')
+        for key, value in validated_data.items():
+            getattr(instance, key, value)
+
+        self.save_tags_ingredinets(ingredients, tags_list, instance)
+        return instance
 
     def get_is_favorited(self, obj):
         """Получение поля избранного."""
@@ -174,6 +164,18 @@ class RecipeSerializer(serializers.ModelSerializer):
             if not isinstance(val, int):
                 raise serializers.ValidationError(
                     "Ожидались значения id (int)")
+            get_object_or_404(TagModel, id=val)
+        return value
+
+    def validate_ingredients(self, value):
+        """Валидация ингредиентов."""
+        indx_list = []
+        for ingredient in value:
+            ingr_indx = ingredient['ingredient']['id']
+            if ingr_indx in indx_list:
+                raise serializers.ValidationError(
+                    "Не должно быть одинаковых ингредиентов.")
+            indx_list.append(ingr_indx)
         return value
 
     def to_internal_value(self, data):
@@ -188,32 +190,25 @@ class RecipeSerializer(serializers.ModelSerializer):
             set_value(ordered_dict, ['tags'], tag_list)
         return ordered_dict
 
-    def save_tags_ingredients(self, validated_data, recipe):
-        """Сохраняет рецепт и создает теги и ингредиенты."""
-        ingredients = validated_data.pop("ingredient_recipe")
-        tags_list = validated_data.pop('tags')
-
-        tag_recipe_model_list = []
-        for tag_id in tags_list:
-            tag_model = get_object_or_404(TagModel, id=tag_id)
-            tag_recipe_model = TagRecipeModel(tag=tag_model, recipe=recipe)
-            tag_recipe_model_list.append(tag_recipe_model)
+    def save_tags_ingredinets(self, ingredients, tags_list, recipe):
+        """Создает поля M2M (ингредиент-рецепт и тег-рецет)."""
 
         ingredient_recipe_model_list = []
         for ingredient in ingredients:
             ingr_id = ingredient['ingredient'].pop("id")
             amount = ingredient['amount']
-            ingredient_model = get_object_or_404(IngredientModel, id=ingr_id)
+            ingredient_model = IngredientModel.objects.get(id=ingr_id)
             ingredient_recipe_model = IngredientRecipeModel(
                 recipe=recipe, ingredient=ingredient_model, amount=amount
             )
             ingredient_recipe_model_list.append(ingredient_recipe_model)
 
         recipe.save()
-        IngredientRecipeModel.objects.bulk_create(ingredient_recipe_model_list)
-        TagRecipeModel.objects.bulk_create(tag_recipe_model_list)
-
-        return recipe
+        recipe.tags.set(TagModel.objects.filter(id__in=tags_list))
+        # recipe.tags_set.set(tags_list)
+        recipe.ingredient_recipe.set(
+            ingredient_recipe_model_list, clear=True, bulk=False
+        )
 
 
 class RecipeTwoSerializer(serializers.ModelSerializer):
