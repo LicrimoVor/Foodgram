@@ -10,7 +10,7 @@ from rest_framework.fields import set_value
 
 from profile_user.models import FavoriteModel, FollowModel, ShoppingCartModel
 from recipe.models import (IngredientModel, IngredientRecipeModel, RecipeModel,
-                           TagModel, TagRecipeModel)
+                           TagModel)
 
 User = get_user_model()
 
