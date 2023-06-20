@@ -6,7 +6,6 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from rest_framework.fields import set_value
 
 from profile_user.models import FavoriteModel, FollowModel, ShoppingCartModel
 from recipe.models import (IngredientModel, IngredientRecipeModel, RecipeModel,
@@ -92,6 +91,14 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
+class TagPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
+    """Вспомогательное поле для тегов."""
+
+    def to_representation(self, value):
+        serializer = TagSerializer(value)
+        return serializer.data
+
+
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор рецептов."""
 
@@ -101,7 +108,8 @@ class RecipeSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
     cooking_time = serializers.IntegerField(required=True,)
-    tags = TagSerializer(many=True, required=False, allow_null=True)
+    tags = TagPrimaryKeyRelatedField(queryset=TagModel.objects.all(),
+                                     many=True)
     author = UserSerializer(required=False)
 
     class Meta:
@@ -120,18 +128,18 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ingredients = validated_data.pop("ingredient_recipe")
-        tags_list = validated_data.pop('tags')
+        tags = validated_data.pop('tags')
         recipe = RecipeModel(**validated_data)
-        self.save_tags_ingredinets(ingredients, tags_list, recipe)
+        self.save_tags_ingredinets(ingredients, tags, recipe)
         return recipe
 
     def update(self, instance, validated_data):
         ingredients = validated_data.pop("ingredient_recipe")
-        tags_list = validated_data.pop('tags')
+        tags = validated_data.pop('tags')
         for key, value in validated_data.items():
-            getattr(instance, key, value)
-        IngredientRecipeModel.objects.filter(recipe=instance).delete()
-        self.save_tags_ingredinets(ingredients, tags_list, instance)
+            setattr(instance, key, value)
+        instance.ingredients.clear()
+        self.save_tags_ingredinets(ingredients, tags, instance)
         return instance
 
     def get_is_favorited(self, obj):
@@ -154,19 +162,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             return True
         return False
 
-    def validate_tags(self, value):
-        """Валидация тегов."""
-        if not value:
-            return value
-        if not isinstance(value, list):
-            raise serializers.ValidationError("Ожидался список")
-        for val in value:
-            if not isinstance(val, int):
-                raise serializers.ValidationError(
-                    "Ожидались значения id (int)")
-            get_object_or_404(TagModel, id=val)
-        return value
-
     def validate_ingredients(self, value):
         """Валидация ингредиентов."""
         indx_list = []
@@ -178,19 +173,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             indx_list.append(ingr_indx)
         return value
 
-    def to_internal_value(self, data):
-        """Обход валидации тегов."""
-        tag_list = []
-        if data.get("tags"):
-            tag_list = data.pop("tags")
-        ordered_dict = super().to_internal_value(data)
-        if tag_list:
-            data["tags"] = tag_list
-            self.validate_tags(tag_list)
-            set_value(ordered_dict, ['tags'], tag_list)
-        return ordered_dict
-
-    def save_tags_ingredinets(self, ingredients, tags_list, recipe):
+    def save_tags_ingredinets(self, ingredients, tags, recipe):
         """Создает поля M2M (ингредиент-рецепт и тег-рецет)."""
 
         ingredient_recipe_model_list = []
@@ -202,9 +185,8 @@ class RecipeSerializer(serializers.ModelSerializer):
                 recipe=recipe, ingredient=ingredient_model, amount=amount
             )
             ingredient_recipe_model_list.append(ingredient_recipe_model)
-
         recipe.save()
-        recipe.tags.set(list(TagModel.objects.filter(id__in=tags_list)))
+        recipe.tags.set(tags)
         recipe.ingredient_recipe.set(
             ingredient_recipe_model_list, bulk=False
         )
