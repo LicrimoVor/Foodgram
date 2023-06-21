@@ -131,7 +131,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags')
         recipe = RecipeModel.objects.create(**validated_data)
         recipe.tags.set(tags)
-        self.save_tags_ingredinets(ingredients, recipe)
+        self.save_ingredinets(ingredients, recipe)
         return recipe
 
     def update(self, instance, validated_data):
@@ -139,7 +139,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags')
         instance.ingredients.clear()
         instance.tags.set(tags)
-        self.save_tags_ingredinets(ingredients, instance)
+        self.save_ingredinets(ingredients, instance)
         return super().update(instance, validated_data)
 
     def get_is_favorited(self, obj):

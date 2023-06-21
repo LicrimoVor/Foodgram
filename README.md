@@ -3,6 +3,7 @@
 <p align="center">
 </p>
 
+
 ## О проекте
 
 ![Screen Shot](images/favorite.png)
