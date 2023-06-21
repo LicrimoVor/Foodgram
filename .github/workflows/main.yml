@@ -38,6 +38,7 @@ jobs:
         DB_HOST: 127.0.0.1
         DB_PORT: 5432
       run: |
+        cd backend/
         python -m flake8 backend/
 
   build_backend_and_push_to_docker_hub:
