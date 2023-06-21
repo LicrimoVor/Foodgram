@@ -39,7 +39,7 @@ services:
     image: licrimovor/foodgram_nginx
     env_file: ../.env
     ports:
-      - 9000:80
+      - 8000:80
     depends_on:
       - backend
     volumes:
