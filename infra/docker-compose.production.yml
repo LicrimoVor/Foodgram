@@ -24,6 +24,7 @@ services:
       - static:/backend_static
       - media:/app/media
       - ./data:/data
+      - ./env:/.env
 
   frontend:
     container_name: foodgram_frontend
