@@ -129,18 +129,18 @@ class RecipeSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ingredients = validated_data.pop("ingredient_recipe")
         tags = validated_data.pop('tags')
-        recipe = RecipeModel(**validated_data)
-        self.save_tags_ingredinets(ingredients, tags, recipe)
+        recipe = RecipeModel.objects.create(**validated_data)
+        recipe.tags.set(tags)
+        self.save_tags_ingredinets(ingredients, recipe)
         return recipe
 
     def update(self, instance, validated_data):
         ingredients = validated_data.pop("ingredient_recipe")
         tags = validated_data.pop('tags')
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
         instance.ingredients.clear()
-        self.save_tags_ingredinets(ingredients, tags, instance)
-        return instance
+        instance.tags.set(tags)
+        self.save_tags_ingredinets(ingredients, instance)
+        return super().update(instance, validated_data)
 
     def get_is_favorited(self, obj):
         """Получение поля избранного."""
@@ -173,7 +173,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             indx_list.append(ingr_indx)
         return value
 
-    def save_tags_ingredinets(self, ingredients, tags, recipe):
+    def save_ingredinets(self, ingredients, recipe):
         """Создает поля M2M (ингредиент-рецепт и тег-рецет)."""
 
         ingredient_recipe_model_list = []
@@ -185,8 +185,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 recipe=recipe, ingredient=ingredient_model, amount=amount
             )
             ingredient_recipe_model_list.append(ingredient_recipe_model)
-        recipe.save()
-        recipe.tags.set(tags)
+
         recipe.ingredient_recipe.set(
             ingredient_recipe_model_list, bulk=False
         )
