@@ -27,10 +27,7 @@ services:
 
   frontend:
     container_name: foodgram_frontend
-    image: licrimovor/foodgram_frontend 
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: licrimovor/foodgram_frontend
     volumes:
       - static:/app/result_build/build
 
