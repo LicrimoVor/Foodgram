@@ -258,7 +258,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         fields = ('recipe', )
 
     def create(self, initial_data):
-        recipe = self.initial_data.get("shoppingcart")
+        recipe = self.initial_data.get("shopping_cart")
         user = self.initial_data.get("user")
         shoppingCart_model = ShoppingCartModel.objects.create(
             recipe=recipe, user=user)
@@ -266,7 +266,8 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
 
     def get_recipe(self, obj):
         """Получения поля рецептов."""
-        serializer = RecipeTwoSerializer(self.recipe)
+        recipe = obj.recipe
+        serializer = RecipeTwoSerializer(recipe)
         return serializer.data
 
     def to_representation(self, value):
@@ -281,13 +282,13 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         уже не существующую модель), тело ответа:
         {"errors": "string"}. Или это все лишнее?
         """
-        recipe_id = data.pop("favorite_id")
+        recipe_id = data.pop("shopping_cart_id")
         recipe_model = get_object_or_404(RecipeModel, id=recipe_id)
         user = data.get("user")
         if ShoppingCartModel.objects.filter(user=user,
                                             recipe=recipe_model).first():
             raise BadRequest()
-        data["shoppingcart"] = recipe_model
+        data["shopping_cart"] = recipe_model
         return super().validate_empty_values(data)
 
 
