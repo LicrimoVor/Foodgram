@@ -35,5 +35,18 @@ class FavoriteRecipeFilter(BaseFilterBackend):
             queryset_2 = (
                 RecipeModel.objects.prefetch_related(
                     'favorites').filter(favorites__user=user)).distinct()
-            queryset = queryset_2 & queryset
+            queryset = queryset_2 & queryset.distinct()
+        return queryset
+
+
+class ShoppingRecipeFilter(BaseFilterBackend):
+    """Фильтрация рецептов по корзине покупок."""
+
+    def filter_queryset(self, request, queryset, view):
+        if request.query_params.get('is_in_shopping_cart'):
+            user = request.user
+            queryset_2 = (
+                RecipeModel.objects.prefetch_related(
+                    'shopping').filter(shopping__user=user)).distinct()
+            queryset = queryset_2 & queryset.distinct()
         return queryset

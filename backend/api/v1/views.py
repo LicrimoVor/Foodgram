@@ -1,4 +1,3 @@
-from core.func import get_object_or_400
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -10,7 +9,8 @@ from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
 from profile_user.models import FavoriteModel, FollowModel, ShoppingCartModel
 from recipe.models import (IngredientModel, IngredientRecipeModel, RecipeModel,
                            TagModel)
-from .filterset import FavoriteRecipeFilter, IngredientFilter, TagsRecipeFilter
+from .filterset import (FavoriteRecipeFilter, IngredientFilter,
+                        TagsRecipeFilter, ShoppingRecipeFilter)
 from .pagination import CustomPagination
 from .serializers import (FavoriteSerializer, FollowSerializer,
                           IngredientSerializer, RecipeSerializer,
@@ -48,7 +48,8 @@ class RecipeSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly, )
     filter_backends = (filters.SearchFilter,
                        TagsRecipeFilter,
-                       FavoriteRecipeFilter)
+                       FavoriteRecipeFilter,
+                       ShoppingRecipeFilter)
     search_fields = ("text",)
 
     def perform_create(self, serializer):
@@ -91,7 +92,6 @@ class PostDelFollowView(generics.DestroyAPIView,
             'user': request.user,
             'follow_id': kwargs.get("follow_id"),
         }
-
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -104,7 +104,7 @@ class PostDelFollowView(generics.DestroyAPIView,
         follow_id = kwargs.get("follow_id")
         author = get_object_or_404(User, id=follow_id)
         user = request.user
-        follow_model = get_object_or_400(FollowModel,
+        follow_model = get_object_or_404(FollowModel,
                                          follower=author, user=user)
         follow_model.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -176,7 +176,7 @@ class PostDelShoppingCartView(generics.DestroyAPIView,
         recipe_id = kwargs.get("shopping_cart_id")
         recipe = get_object_or_404(RecipeModel, id=recipe_id)
         user = request.user
-        favorite_model = get_object_or_400(ShoppingCartModel,
+        favorite_model = get_object_or_404(ShoppingCartModel,
                                            recipe=recipe, user=user)
         favorite_model.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -209,7 +209,7 @@ class FavoriteView(generics.DestroyAPIView,
         recipe_id = kwargs.get("favorite_id")
         recipe = get_object_or_404(RecipeModel, id=recipe_id)
         user = request.user
-        favorite_model = get_object_or_400(FavoriteModel,
+        favorite_model = get_object_or_404(FavoriteModel,
                                            recipe=recipe, user=user)
         favorite_model.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
