@@ -109,7 +109,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     cooking_time = serializers.IntegerField(
         required=True,
         validators=[MinValueValidator(
-            1, 'Время готовки не может быть меньше 1.'),])
+            1, 'Время готовки не может быть меньше 1.'), ])
     tags = TagPrimaryKeyRelatedField(queryset=TagModel.objects.all(),
                                      many=True)
     author = UserSerializer(required=False)
