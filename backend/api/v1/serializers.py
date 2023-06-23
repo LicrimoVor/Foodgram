@@ -1,11 +1,11 @@
 import base64
 
-from core.exception import BadRequest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+from django.core.validators import MinValueValidator
 
 from profile_user.models import FavoriteModel, FollowModel, ShoppingCartModel
 from recipe.models import (IngredientModel, IngredientRecipeModel, RecipeModel,
@@ -49,7 +49,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 class TagSerializer(serializers.ModelSerializer):
     """Сериализатор тегов."""
-
     class Meta:
         model = TagModel
         fields = ('id', 'name', 'color', 'slug')
@@ -107,7 +106,10 @@ class RecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField(allow_null=False, required=False,)
     is_favorited = serializers.SerializerMethodField(read_only=True)
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
-    cooking_time = serializers.IntegerField(required=True,)
+    cooking_time = serializers.IntegerField(
+        required=True,
+        validators=[MinValueValidator(
+            1, 'Время готовки не может быть меньше 1.'),])
     tags = TagPrimaryKeyRelatedField(queryset=TagModel.objects.all(),
                                      many=True)
     author = UserSerializer(required=False)
@@ -228,25 +230,6 @@ class FollowSerializer(serializers.ModelSerializer):
         result_dict = {**value_dict, **follower_dict}
         return result_dict
 
-    def create(self, validated_data):
-        author = self.initial_data.get('author')
-        user = self.initial_data.get("user")
-        follow_model = FollowModel.objects.create(follower=author,
-                                                  user=user)
-        return follow_model
-
-    def validate_empty_values(self, data):
-        """Валидация данных."""
-        follow_id = data.pop("follow_id")
-        author = get_object_or_404(User, id=follow_id)
-        user = data.get("user")
-        if user.id == follow_id:
-            raise BadRequest()
-        if FollowModel.objects.filter(follower=author, user=user).first():
-            raise BadRequest()
-        data['author'] = author
-        return super().validate_empty_values(data)
-
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
     """Сериализатор списка продуктов."""
@@ -256,13 +239,6 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingCartModel
         fields = ('recipe', )
-
-    def create(self, initial_data):
-        recipe = self.initial_data.get("shopping_cart")
-        user = self.initial_data.get("user")
-        shoppingCart_model = ShoppingCartModel.objects.create(
-            recipe=recipe, user=user)
-        return shoppingCart_model
 
     def get_recipe(self, obj):
         """Получения поля рецептов."""
@@ -275,22 +251,6 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         result_dict = {**value_dict, }
         return result_dict
 
-    def validate_empty_values(self, data):
-        """
-        В ReDoc описано 'при ошбике выдавать 400'
-        (например, при попытке добавить уже существующую или удалить
-        уже не существующую модель), тело ответа:
-        {"errors": "string"}. Или это все лишнее?
-        """
-        recipe_id = data.pop("shopping_cart_id")
-        recipe_model = get_object_or_404(RecipeModel, id=recipe_id)
-        user = data.get("user")
-        if ShoppingCartModel.objects.filter(user=user,
-                                            recipe=recipe_model).first():
-            raise BadRequest()
-        data["shopping_cart"] = recipe_model
-        return super().validate_empty_values(data)
-
 
 class FavoriteSerializer(serializers.ModelSerializer):
     """Сериализатор избранных рецептов."""
@@ -300,13 +260,6 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoriteModel
         fields = ('recipe', )
-
-    def create(self, initial_data):
-        recipe = self.initial_data.get("favorite")
-        user = self.initial_data.get("user")
-        favorite_model = FavoriteModel.objects.create(
-            recipe=recipe, user=user)
-        return favorite_model
 
     def get_recipe(self, obj):
         """Получения поля рецептов."""
@@ -318,19 +271,3 @@ class FavoriteSerializer(serializers.ModelSerializer):
         value_dict = dict(super().to_representation(value))
         result_dict = {**value_dict, }
         return result_dict
-
-    def validate_empty_values(self, data):
-        """
-        В ReDoc описано 'при ошбике выдавать 400'
-        (например, при попытке добавить уже существующую или удалить
-        уже не существующую модель), тело ответа:
-        {"errors": "string"}. Или это все лишнее?
-        """
-        recipe_id = data.pop("favorite_id")
-        recipe_model = get_object_or_404(RecipeModel, id=recipe_id)
-        user = data.get("user")
-        if FavoriteModel.objects.filter(user=user,
-                                        recipe=recipe_model).first():
-            raise BadRequest()
-        data["favorite"] = recipe_model
-        return super().validate_empty_values(data)
