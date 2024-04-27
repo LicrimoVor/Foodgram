@@ -1,4 +1,4 @@
-# praktikum_new_diplom
+# Pet-Project (django)
 <br/>
 <p align="center">
 </p>
